@@ -33,7 +33,7 @@ class AuthController extends Controller
 
         } catch (Exception $e) {
             return response()->json([
-                'message' => "Internal server error",
+                'message' => "Login failed",
                 'error' => $e->getMessage()
             ], 500);
         }
@@ -46,13 +46,33 @@ class AuthController extends Controller
             $user = Auth::user();
 
             return response()->json([
-                'message' => "Your profile",
+                'message' => "My profile",
                 'data' => new UserResource($user),
             ], 200);
 
         } catch (Exception $e) {
             return response()->json([
-                'message' => "Internal server error",
+                'message' => "Failed get profile",
+                'error' => $e->getMessage()
+            ], 500);
+
+        }
+    }
+
+    public function logout()
+    {
+        try {
+
+            $user = Auth::user();
+            $user->currentAccessToken()->delete();
+
+            return response()->json([
+                'message' => "Logout success",
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => "Failed logout",
                 'error' => $e->getMessage()
             ], 500);
 
