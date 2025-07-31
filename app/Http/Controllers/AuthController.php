@@ -39,7 +39,7 @@ class AuthController extends Controller
             return response()->json([
                 'message' => "Login failed",
                 'error' => $e->getMessage()
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
@@ -58,7 +58,7 @@ class AuthController extends Controller
             return response()->json([
                 'message' => "Failed get profile",
                 'error' => $e->getMessage()
-            ], 500);
+            ], $e->getCode() ?: 500);
 
         }
     }
@@ -78,7 +78,7 @@ class AuthController extends Controller
             return response()->json([
                 'message' => "Failed logout",
                 'error' => $e->getMessage()
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
@@ -102,13 +102,14 @@ class AuthController extends Controller
                     'token' => $token,
                     'user' => new UserResource($user),
                 ]
-            ], 200);
+            ], 201);
 
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => "Failed Register account",
                 'error' => $e->getMessage()
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 }
