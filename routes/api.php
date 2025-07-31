@@ -20,4 +20,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     
     Route::post('/ticket', [TicketController::class, 'store']);
+    Route::get('/ticket', [TicketController::class, 'index']);
 });

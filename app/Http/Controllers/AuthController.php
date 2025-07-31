@@ -105,6 +105,7 @@ class AuthController extends Controller
             ], 201);
 
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => "Failed Register account",
                 'error' => $e->getMessage()

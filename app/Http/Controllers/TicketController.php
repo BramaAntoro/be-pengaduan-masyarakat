@@ -14,9 +14,45 @@ class TicketController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $query = Ticket::query();
+
+        $user = $request->user()->id;
+        try {
+
+            $query->orderBy('created_at', 'desc');
+
+            if (auth()->user()->role == 'user') {
+                $query->where('user_id', '=', $user);
+            }
+
+            if ($request->search) {
+                $query->where('code', 'like', '%' . $request->search . '%')
+                    ->orWhere('title', 'like', '%' . $request->search . '%');
+            }
+
+            if ($request->priority) {
+                $query->where('priority', 'like', '%' . $request->search . '%');
+            }
+
+            if ($request->status) {
+                $query->where('status', 'like', '%' . $request->search . '%');
+            }
+
+            $ticket = $query->get();
+
+            return response()->json([
+                'message' => "Success get ticket",
+                'data' => TicketResource::collection($ticket)
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Failed get ticket',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -35,7 +71,7 @@ class TicketController extends Controller
         $data = $request->validated();
         $data['user_id'] = auth()->user()->id;
         $data['code'] = 'TIC-' . rand(10000, 99999);
-        
+
         DB::beginTransaction();
         try {
 
@@ -49,10 +85,11 @@ class TicketController extends Controller
             ], 201);
 
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => 'Failed create ticket',
                 'error' => $e->getMessage()
-            ]. 500);
+            ] . 500);
         }
     }
 
