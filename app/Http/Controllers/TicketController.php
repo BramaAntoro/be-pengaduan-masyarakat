@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TicketStoreRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
+use Error;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -98,7 +99,32 @@ class TicketController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try {
+
+            $ticket = Ticket::query()->where('code', '=', $id)->firstOrFail();
+
+            if (!$ticket) {
+                $error = "Ticket not found";
+                throw new Exception($error, 404);
+            }
+
+            if (auth()->user()->role == 'user' && $ticket->user_id != auth()->user()->id) {
+                $error = "You are not allowed to access this ticket.";
+                throw new Exception($error, 403);
+            }
+
+
+            return response()->json([
+                'message' => "Success get ticket" . $id,
+                'data' => new TicketResource($ticket)
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => "Failed get ticket" . $id,
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
