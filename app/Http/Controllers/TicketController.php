@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\TicketReplyStoreRequest;
 use App\Http\Requests\TicketStoreRequest;
 use App\Http\Resources\TicketResource;
 use App\Models\Ticket;
+use App\Models\TicketReply;
 use Error;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class TicketController extends Controller
@@ -52,7 +55,7 @@ class TicketController extends Controller
             return response()->json([
                 'message' => 'Failed get ticket',
                 'error' => $e->getMessage()
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
@@ -90,7 +93,7 @@ class TicketController extends Controller
             return response()->json([
                 'message' => 'Failed create ticket',
                 'error' => $e->getMessage()
-            ] . 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
@@ -101,7 +104,7 @@ class TicketController extends Controller
     {
         try {
 
-            $ticket = Ticket::query()->where('code', '=', $id)->firstOrFail();
+            $ticket = Ticket::query()->where('code', '=', $id)->first();
 
             if (!$ticket) {
                 $error = "Ticket not found";
@@ -123,7 +126,7 @@ class TicketController extends Controller
             return response()->json([
                 'message' => "Failed get ticket" . $id,
                 'error' => $e->getMessage()
-            ], 500);
+            ], $e->getCode() ?: 500);
         }
     }
 
@@ -135,13 +138,57 @@ class TicketController extends Controller
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(TicketReplyStoreRequest $request, string $id)
     {
-        //
+        $data = $request->validated();
+
+        $user = Auth::user();
+
+        DB::beginTransaction();
+        try {
+            $ticket = Ticket::query()->where('code', '=', $id)->firstOrFail();
+
+            if ($user->role == 'user' && $ticket->user_id != $user->id) {
+                $error = "You are not allowed to reply this ticket.";
+                throw new Exception($error, 403);
+            }
+
+            $ticketReply = TicketReply::query()->create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'content' => $data['content'],
+            ]);
+
+            if ($user->role == 'admin') {
+
+                if (isset($data['status'])) {
+                    $ticket->status = $data['status'];
+
+                    if ($data['status'] === 'resolved') {
+                        $ticket->completed_at = now();
+                    }
+
+                    $ticket->save();
+                }
+
+            }
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Ticket reply created and ticket updated successfully.',
+                'reply' => $ticketReply,
+                'ticket' => $ticket,
+            ], 200);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], $e->getCode() ?: 500);
+        }
     }
+
 
     /**
      * Remove the specified resource from storage.
