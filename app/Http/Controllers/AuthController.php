@@ -102,7 +102,7 @@ class AuthController extends Controller
                     'token' => $token,
                     'user' => new UserResource($user),
                 ]
-            ], 200);
+            ], 201);
 
         } catch (Exception $e) {
             return response()->json([
