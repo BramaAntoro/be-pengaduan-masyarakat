@@ -18,10 +18,8 @@ class AuthController extends Controller
         try {
 
             if (!Auth::guard('web')->attempt($request->only('email', 'password'))) {
-                return response()->json([
-                    'message' => "Email or Password failed",
-                    'data' => null
-                ], 401);
+                $error = "You are not allowed to access this ticket.";
+                throw new Exception($error, 401);
             }
 
             $user = Auth::user();
