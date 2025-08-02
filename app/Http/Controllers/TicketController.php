@@ -37,18 +37,24 @@ class TicketController extends Controller
             }
 
             if ($request->priority) {
-                $query->where('priority', 'like', '%' . $request->search . '%');
+                $query->where('priority', 'like', '%' . $request->priority . '%');
             }
 
             if ($request->status) {
-                $query->where('status', 'like', '%' . $request->search . '%');
+                $query->where('status', 'like', '%' . $request->status . '%');
             }
 
-            $ticket = $query->get();
+            $ticket = $query->paginate(5);
 
             return response()->json([
                 'message' => "Success get ticket",
-                'data' => TicketResource::collection($ticket)
+                'data' => TicketResource::collection($ticket),
+                'meta' => [
+                    'current_page' => $ticket->currentPage(),
+                    'last_page' => $ticket->lastPage(),
+                    'per_page' => $ticket->perPage(),
+                    'total' => $ticket->total(),
+                ]
             ], 200);
 
         } catch (Exception $e) {
