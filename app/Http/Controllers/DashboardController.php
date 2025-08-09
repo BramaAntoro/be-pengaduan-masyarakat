@@ -12,22 +12,35 @@ class DashboardController extends Controller
     public function getStatistics()
     {
         try {
-            $totalTickets = Ticket::count();
+            $user = auth()->user();
 
-            $activeTickets = Ticket::where('status', '!=', 'resolved')->count();
+            $query = Ticket::query();
 
-            $resolvedTickets = Ticket::where('status', 'resolved')->count();
+            if ($user->role === 'user') {
+                $query->where('user_id', $user->id);
+            }
 
-            $avgResolutionTime = Ticket::where('status', 'resolved')
+            $totalTickets = (clone $query)->count();
+
+            $activeTickets = (clone $query)
+                ->where('status', '!=', 'resolved')
+                ->count();
+
+            $resolvedTickets = (clone $query)
+                ->where('status', 'resolved')
+                ->count();
+
+            $avgResolutionTime = (clone $query)
+                ->where('status', 'resolved')
                 ->whereNotNull('completed_at')
                 ->select(DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, completed_at)) as avg_time'))
                 ->value('avg_time') ?? 0;
 
             $statusDistribution = [
-                'open' => Ticket::where('status', 'open')->count(),
-                'on_progress' => Ticket::where('status', 'on_progress')->count(),
-                'resolved' => Ticket::where('status', 'resolved')->count(),
-                'rejected' => Ticket::where('status', 'rejected')->count(),
+                'open' => (clone $query)->where('status', 'open')->count(),
+                'on_progress' => (clone $query)->where('status', 'on_progress')->count(),
+                'resolved' => (clone $query)->where('status', 'resolved')->count(),
+                'rejected' => (clone $query)->where('status', 'rejected')->count(),
             ];
 
             $dashboardData = [
@@ -50,4 +63,5 @@ class DashboardController extends Controller
             ], 500);
         }
     }
+
 }
