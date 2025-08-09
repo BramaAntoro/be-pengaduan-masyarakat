@@ -80,7 +80,12 @@ class TicketController extends Controller
     {
         $data = $request->validated();
         $data['user_id'] = auth()->user()->id;
-        $data['code'] = 'TIC-' . rand(10000, 99999);
+        $data['code'] = 'PM-' . rand(10000, 99999);
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('ticket_images', 'public');
+            $data['image'] = $imagePath;
+        }
 
         DB::beginTransaction();
         try {
@@ -99,7 +104,7 @@ class TicketController extends Controller
             return response()->json([
                 'message' => 'Failed create ticket',
                 'error' => $e->getMessage()
-            ], $e->getCode() ?: 500);
+            ], 500);
         }
     }
 

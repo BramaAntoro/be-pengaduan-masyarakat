@@ -26,6 +26,7 @@ class TicketResource extends JsonResource
             'updated_at' => $this->updated_at,
             'completed_at' => $this->completed_at,
             'ticket_replies' => TicketReplyResource::collection($this->ticketReplies),
+            'image' => $this->image ? asset(path: 'storage/' . $this->image) : null,
         ];
     }
 }
